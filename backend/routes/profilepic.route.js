@@ -7,8 +7,8 @@ import { getProfilePic, setProfilePic, updateProfilePic } from "../controllers/p
 const profilepicRouter = Router()
 
 
-profilepicRouter.route('/set').post(verifyjwt,upload.single('avatar'),setProfilePic)
-profilepicRouter.route('/update').post(verifyjwt,upload.single('avatar'),updateProfilePic)
+profilepicRouter.route('/set').post(verifyjwt,upload.any(),setProfilePic)
+profilepicRouter.route('/update').post(verifyjwt,upload.any(),updateProfilePic)
 profilepicRouter.route('/get').get(verifyjwt,getProfilePic)
 
 

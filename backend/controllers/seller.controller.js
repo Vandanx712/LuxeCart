@@ -16,6 +16,7 @@ import sentOrderInfoForBoy from "../notification/sentOrderInfoForBoy.js";
 import mongoose from "mongoose";
 import { Buyer } from "../models/buyer/buyer.model.js";
 import { Category } from "../models/admin/category.model.js";
+import { Address } from "../models/address.model.js";
 
 
 
@@ -526,18 +527,15 @@ export const assignOrder = asynchandller(async(req,res)=>{
     const {deliveryboyId,orderId} = req.body
     const sellerId = req.user.id
 
-    if([deliveryboyId,orderId].some((field)=>field==='')) throw ApiError(409,'Plz fill all field')
+    if([deliveryboyId,orderId].some((field)=>field==='')) throw new ApiError(409,'Plz fill all field')
     if(!deliveryboyId) throw new ApiError(400,'DeliveryBoy id is required')
     const deliveryboy = await DeliveryBoy.findById(deliveryboyId)
     if(!deliveryboy || deliveryboy.is_ondelivery==true) throw new ApiError(404,'DeliveryBoy not found or he is on delivery')
     
-    const order = await Order.findOneAndUpdate({seller:sellerId,_id:orderId},{$set:{delivery_boy:deliveryboyId,order_status:"Shipped"}},{new:true})
-    if(!order) throw new ApiError(404,'Order not found')
-    deliveryboy.is_ondelivery=true
-    await deliveryboy.save()
+    const order = await Order.findOneAndUpdate({seller:sellerId,id:orderId},{$set:{delivery_boy:deliveryboyId,order_status:"Shipped"}},{new:true})
+    await DeliveryBoy.findByIdAndUpdate(deliveryboy.id,{$set:{is_ondelivery:true}})
     
-    await sentOrderInfoForBoy(deliveryboy)
-
+    sentOrderInfoForBoy(deliveryboy)
     return res.status(200).json({
         message:'Order assign for deliveryBoy successfully',
         order
@@ -641,8 +639,8 @@ export const deliveryboylist = asynchandller(async(req,res)=>{
 
     const Deliveryboys = await DeliveryBoy.find({createBy:sellerId}).select('username _id name phone email vehicle_type is_ondelivery profileImg createBy').sort({ createdAt: -1 })
     const totaldeliveryboy = Deliveryboys.length
-    const free = Deliveryboys.filter((boy)=>boy.is_ondelivery == false).length
-    const ondelivery = Deliveryboys.filter((boy)=>boy.is_ondelivery == true).length
+    const free = Deliveryboys.filter((boy)=>boy.is_ondelivery === false).length
+    const ondelivery = Deliveryboys.filter((boy)=>boy.is_ondelivery === true).length
     const deliveryboys = await Promise.all(
         Deliveryboys.map(async(boy)=>{
             const orders = (await Order.find({delivery_boy:boy.id,order_status:'Delivered'}).select('id')).length
@@ -831,5 +829,50 @@ export const filterAllList = asynchandller(async (req, res) => {
     return res.status(200).json({
         message: 'List filtered successfully',
         filteredItem
+    })
+})
+
+export const ordergetbyid = asynchandller(async (req, res) => {
+    const { orderid } = req.params
+    if (!orderid) throw new ApiError(404, 'Orderid is required')
+
+    const order = await Order.findById(orderid)
+    const [customer, deliveryboy, shipping_address] = await Promise.all([
+        Buyer.findById(order.buyer._id).select('name'),
+        DeliveryBoy.findById(order.delivery_boy._id).select('name username'),
+        Address.findById(order.shipping_address._id).select('street city state zip_code')
+    ])
+    const address = `${shipping_address.street}, ${shipping_address.city} ${shipping_address.state}-${shipping_address.zip_code}`
+    const date = new Date(order.createdAt)
+    const items = await Promise.all(
+        order.items.map(async (item) => {
+            const product = await Product.findById(item.product).select('name images')
+            const variant = await ProductVariant.findById(item.variant).select('variant_name discount_price')
+
+            return {
+                'name': product.name,
+                'variantname': variant.variant_name,
+                'quantity': item.quantity,
+                'discount_price': variant.discount_price,
+                'image': product.images[0]
+            }
+        })
+    )
+
+    const orderDetail = {
+        id: order.id,
+        sellerId: order.seller,
+        customer: customer.name,
+        deliveryboy: `${deliveryboy.username}-${deliveryboy.name}`,
+        status: order.order_status,
+        payment_status: order.payment_status,
+        total_price: order.total_price,
+        address,
+        date,
+        items
+    }
+    return res.status(200).json({
+        message: 'Detail fatch successfully',
+        orderDetail
     })
 })

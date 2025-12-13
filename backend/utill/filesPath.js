@@ -1,7 +1,7 @@
 import path from 'path'
 
 
-export const AwsStorePath = (sellerName,options={}) =>{
+export const StoragePath = (sellerName,options={}) =>{
     const {
         includeSellerName = false,
         includeuserprofilepic = true,
@@ -9,10 +9,10 @@ export const AwsStorePath = (sellerName,options={}) =>{
     } = options
 
     const folderPath = [
-        ...(includeuserprofilepic ? ['userprofilepic'] :[]),
-        ...(includeproductspic ? ['productpic'] : []),
-        ...(includeSellerName ? [sellerName] : []) 
-    ]
+        includeuserprofilepic ? "userprofilepic" : null,
+        includeproductspic ? "productpic" : null,
+        includeSellerName ? sellerName : null
+    ].filter(Boolean)
 
     return path.posix.join(...folderPath)
 }

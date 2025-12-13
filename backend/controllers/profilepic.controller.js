@@ -1,48 +1,48 @@
 import { ApiError } from "../utill/apierror.js"
 import { asynchandller } from "../utill/asynchandller.js"
-import { AwsStorePath } from "../utill/filesPath.js"
-import { updatePic, uploadPic } from "../services/awsS3.js"
+import { StoragePath } from "../utill/filesPath.js"
+import { updatePic, uploadPic } from "../services/cloudstorage.js"
+import { findUserByEmail } from "./common.controller.js"
 
 
 
 
 export const setProfilePic = asynchandller(async (req, res) => {
-    const file = req.file
+    const file = req.files
     const user = req.user
 
-    if (!filepath) throw new ApiError(409, 'Please upload image file')
+    if (!file) throw new ApiError(409, 'Please upload image file')
 
-    const AwsKey = AwsStorePath('')
-    const Key = `${AwsKey}/${file.originalname}`
+    const User = await findUserByEmail(user.email)
+    const Key = StoragePath('',{})
 
     const img = await uploadPic(Key,file)
 
-    user.profileImg = img
-    await user.save()
+    User.profileImg = img[0]
+    await User.save()
     
     return res.status(200).json({
-        message: 'Profile image successfully',
-        updatedBuyer: user
+        message: 'Profile image upload successfully',
+        profileImg:User.profileImg
     })
 })
 
 export const updateProfilePic = asynchandller(async (req, res) => {
     const { oldkey } = req.body
-    const file = req.file
-
+    const file = req.files[0]
     const user = req.user
-    if (!filepath) throw new ApiError(409, 'Please upload image file')
 
-    const updatedImg = await updatePic(oldkey, file)
-    const time = new Date(Date.now() + 5 * 60 * 1000)
+    if (!file) throw new ApiError(409, 'Please upload image file')
+    const User = await findUserByEmail(user.email)
+    const Key = StoragePath('',{})
+    const updatedImg = await updatePic(oldkey,Key,file)
 
-    user.profileImg = updatedImg
-    await user.save()
-    filedeleteReminder(time, filepath.path)
+    User.profileImg = updatedImg
+    await User.save()
 
     return res.status(200).json({
         message: 'Profile image update successfully',
-        updatedBuyer: user
+        profileImg:User.profileImg
     })
 })
 

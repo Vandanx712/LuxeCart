@@ -22,11 +22,14 @@ import {
   FiPhone,
   FiUser,
   FiLock,
-  FiLogOut
+  FiLogOut,
+  FiCopy
 } from 'react-icons/fi'
 import { Link } from 'react-router-dom';
 import axios from 'axios'
 import { toast,Toaster } from 'react-hot-toast';
+import '../index.css'
+import AddProduct from '../components/common/AddProduct';
 
 
 
@@ -64,7 +67,6 @@ function SellerDashboard() {
   const [seller,setSeller] = useState({})
   const [isfilterOpen,setFilterOpen] = useState(false)
   const [item,setItem] = useState('')
-
   const [selectedStatuses, setSelectedStatuses] = useState('');
   const [secSelectedStatus, setSecSeletedStatus] = useState('')
   const [vehicle, setVehicle] = useState('')
@@ -74,6 +76,13 @@ function SellerDashboard() {
   const [statuses, setStatuses] = useState([])
   const [categories, setCategories] = useState([])
   const [discount, setDiscount] = useState('all')
+  const [selectedOrder,setSelectedOrder] = useState('')
+  const [selectedProduct,setSelectedProduct] = useState('')
+  const [selectedDeliveryboy,setSelectedDeliveryboy] = useState('')
+  const [isAssignopen,setAssignOpen] = useState(false)
+  const [isAddProductOpen,setAddProductopen] = useState(false)
+  const [orderId,setOrderid] = useState('')
+  const [orderDetail,setOrderDetail] = useState({})
 
 
   const sellerId = localStorage.getItem('id')
@@ -85,13 +94,20 @@ function SellerDashboard() {
 
   useEffect(()=>{
     if(activesection=='Dashboard') {loadOrderlist(); loadSellerDetail()}
-    if(activesection=='Orders') loadOrderlist()
-    if(activesection=='Products') loadProductlist()
-    if(activesection=='Deliveryboys') loadDeliveryboylist()
+    if(activesection=='Orders') {loadOrderlist()}
+    if(activesection=='Products') {loadProductlist()}
+    if(activesection=='Deliveryboys') {loadDeliveryboylist()}
   },[activesection])
   
-  useEffect(()=>{
-    handleStatuses()
+  useEffect(() => {
+    if (item === 'Order' && statuses !== forOrder) {
+      setStatuses(forOrder);
+    } else if (item === 'Product' && statuses !== forProduct) {
+      setStatuses(forProduct);
+      loadCategory();
+    } else if (item === 'Deliveryboy' && statuses !== forboy) {
+      setStatuses(forboy);
+    }
   },[item])
 
   const loadOrderlist = async()=>{
@@ -169,12 +185,6 @@ function SellerDashboard() {
     }
   }
 
-  const handleStatuses =()=> {
-    if (item == 'Order') setStatuses(forOrder)
-    if (item == 'Product'){ setStatuses(forProduct); loadCategory() }
-    if (item == 'Deliveryboy')setStatuses(forboy);
-  }
-
   const handleReset = () => {
     setSelectedStatuses('');
     setSecSeletedStatus('');
@@ -229,6 +239,35 @@ function SellerDashboard() {
     } catch (error) { 
       console.error(error)
     }
+  }
+
+  const AssignOrder = async () => {
+    try {
+      const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/seller/assignorder`, {
+        deliveryboyId: selectedDeliveryboy,
+        orderId
+      }, { withCredentials: true })
+      toast.success(response.data.message)
+      setAssignOpen(!isAssignopen)
+      selectedDeliveryboy('')
+      setOrderid('')
+    } catch (error) {
+      toast.error(error.response?.data.message)
+    }
+  }
+
+  const openOrder = async(orderid)=>{
+    setSelectedOrder(orderid)
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/seller/getorderbyid/${orderid}`,{withCredentials:true})
+      setOrderDetail(response.data.orderDetail)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const closeAddProduct = ()=>{
+    setAddProductopen(!isAddProductOpen)
   }
 
   const forOrder = [
@@ -381,7 +420,7 @@ function SellerDashboard() {
               <div className="absolute inset-0 bg-gradient-to-r from-royalpurple/20 to-transparent"></div>
               <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold mb-2 lg:mb-3">Welcome back, John! 👋</h1>
+                  <h1 className="text-2xl lg:text-3xl font-bold mb-2 lg:mb-3">Welcome back, {username}! 👋</h1>
                   <p className="text-lg lg:text-xl opacity-90">Here's what's happening with your store today.</p>
                 </div>
               </div>
@@ -417,7 +456,7 @@ function SellerDashboard() {
             <div className="bg-offwhite backdrop-blur-sm border border-gray-100 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:border-royalpurple/30 transition-all duration-500 hover:-translate-y-1">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 lg:mb-8 gap-4">
                 <h3 className="text-xl lg:text-2xl font-semibold font-sans text-CharcoalBlack">Recent Orders</h3>
-                <button className="px-4 py-2 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:scale-105 backdrop-blur-sm border border-warmgrey/20 text-CharcoalBlack hover:border-gold/50 text-sm lg:text-base">View All Orders</button>
+                <button onClick={()=>setactivesection('Orders')} className="px-4 py-2 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:scale-105 backdrop-blur-sm border border-warmgrey/20 text-CharcoalBlack hover:border-gold/50 text-sm lg:text-base">View All Orders</button>
               </div>
 
               <div className="space-y-3 lg:space-y-4">
@@ -445,7 +484,7 @@ function SellerDashboard() {
                       <p className="text-warmgrey font-medium text-sm lg:text-base">{order.time}</p>
                     </div>
 
-                    <button className="p-2 lg:p-3 hover:bg-gold/10 rounded-xl lg:rounded-2xl transition-all duration-300 group-hover:scale-110 flex-shrink-0">
+                    <button onClick={()=>openOrder(order.orderid)} className="p-2 lg:p-3 hover:bg-gold/10 rounded-xl lg:rounded-2xl transition-all duration-300 group-hover:scale-110 flex-shrink-0">
                       <FiEye className="text-warmgrey hover:text-gold transition-colors duration-300 text-lg lg:text-xl" />
                     </button>
                   </div>
@@ -556,7 +595,7 @@ function SellerDashboard() {
                       <p className="text-warmgrey font-medium text-sm">{order.time}</p>
                     </div>
 
-                    <button className="p-3 hover:bg-gold/10 rounded-xl transition-all duration-300 group-hover:scale-110">
+                    <button onClick={()=>openOrder(order.orderid)} className="p-3 hover:bg-gold/10 rounded-xl transition-all duration-300 group-hover:scale-110">
                       <FiEye className="text-warmgrey hover:text-gold transition-colors duration-300 text-xl" />
                     </button>
                   </div>
@@ -580,7 +619,7 @@ function SellerDashboard() {
                     <FiFilter />
                     Filter
                   </button>
-                  <button className=" px-4 py-2 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:scale-105 bg-gradient-to-l from-yellow-500 to-yellow-400 text-CharcoalBlack hover:shadow-lg transform hover:-translate-y-1 flex items-center gap-2">
+                  <button onClick={()=>setAddProductopen(!isAddProductOpen)} className=" px-4 py-2 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:scale-105 bg-gradient-to-l from-yellow-500 to-yellow-400 text-CharcoalBlack hover:shadow-lg transform hover:-translate-y-1 flex items-center gap-2">
                     <FiPlus />
                     Add Product
                   </button>
@@ -811,6 +850,7 @@ function SellerDashboard() {
                       <p className="text-sm text-warmgrey mb-1">Delivered Orders</p>
                       <p className="text-2xl font-bold text-CharcoalBlack">{boy.orders}</p>
                     </div>
+                    <button onClick={()=>{setSelectedDeliveryboy(boy._id);setAssignOpen(!isAssignopen)}} className="px-4 py-2 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:scale-105 bg-offwhite/80 backdrop-blur-sm border border-gray-300 text-CharcoalBlack hover:border-gold/50">Assign Order</button>
                     <button className="px-4 py-2 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:scale-105 bg-offwhite/80 backdrop-blur-sm border border-gray-300 text-CharcoalBlack hover:border-gold/50">View Details</button>
                   </div>
                 </div>
@@ -917,7 +957,7 @@ function SellerDashboard() {
                     />
                   </div>
                   {!hidebutton && (
-                    <button className="px-4 py-2 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:scale-105 bg-blue-600 text-white hover:shadow-glow transform hover:-translate-y-1 w-full" onClick={updateDetail}>Save Changes</button>
+                    <button className="px-4 py-2 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:scale-105 bg-blue-600 text-white hover:shadow-glow transform hover:-translate-y-1 w-full" onClick={()=>updateDetail()}>Save Changes</button>
                   )}
                 </div>
               </div>
@@ -1075,6 +1115,7 @@ function SellerDashboard() {
       </div>
       <Toaster position="top-center" reverseOrder={false} />
       
+      {/* filter part */}
       {isfilterOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/10 backdrop-blur-sm"
@@ -1089,7 +1130,7 @@ function SellerDashboard() {
                 <h2 className="text-xl sm:text-2xl font-medium font-sans text-CharcoalBlack">Filter {item}s</h2>
                 <div className="flex items-center gap-5">
                   <button
-                    onClick={handleReset}
+                    onClick={()=>handleReset()}
                     className="text-sm font-normal text-warmgrey hover:text-royalpurple transition-colors"
                   >
                     Reset All
@@ -1298,14 +1339,14 @@ function SellerDashboard() {
             <div className="p-4 sm:p-6 border-t border-gray-300">
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={handleReset}
+                  onClick={()=>handleReset()}
                   className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-white text-CharcoalBlack hover:bg-surface-hover transition-colors flex items-center justify-center gap-2 font-medium"
                 >
                   <FiX />
                   Clear
                 </button>
                 <button
-                  onClick={handleFilter}
+                  onClick={()=>handleFilter()}
                   className="flex-1 px-4 py-3 rounded-xl bg-blue-500 text-white hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-medium shadow-lg"
                 >
                   <FiCheck />
@@ -1316,6 +1357,172 @@ function SellerDashboard() {
           </div>
         </div>
       )}
+
+      {/* Assign Order */}
+      {isAssignopen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/10 backdrop-blur-sm">
+          <div className="bg-offwhite backdrop-blur-sm border border-gray-200 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:border-royalpurple/30 transition-all duration-500 hover:-translate-y-1">
+            <div className="flex items-center gap-5 mb-6">
+              <div className="p-3 bg-blue-600 rounded-xl text-white">
+                <FiUser className="text-2xl" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-CharcoalBlack">Assign Order</h3>
+                <p className="text-warmgrey">Manage your order by assign to Deliveryboy</p>
+              </div>
+              <button onClick={()=>setAssignOpen(!isAssignopen)} className="text-warmgrey text-xl hover:text-CharcoalBlack transition-colors"><FiX/></button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-CharcoalBlack mb-2">Deliveryboy Id</label>
+                <input
+                  type="text"
+                  defaultValue={selectedDeliveryboy}
+                  disabled
+                  className="w-full px-4 py-3 bg-offwhite border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-royalpurple focus:border-royalpurple/50 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-CharcoalBlack mb-2">Order Id</label>
+                <input
+                  type="text"
+                  value={orderId}
+                  placeholder='Enter OrderId'
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    setOrderid(newValue.trim())
+                  }}
+                  className="w-full px-4 py-3 bg-offwhite border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-royalpurple focus:border-royalpurple/50 transition-all"
+                />
+              </div>
+              
+              <button className="px-4 py-2 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:scale-105 bg-blue-600 text-white hover:shadow-glow transform hover:-translate-y-1 w-full" onClick={()=>AssignOrder()}>Assign</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order Details */}
+      {selectedOrder && (
+        <div
+          className=" fixed inset-0 bg-CharcoalBlack/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 duration-200"
+          onClick={() => setSelectedOrder(null)}
+        >
+          <div
+            className="bg-offwhite scrollbar rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-blue-600 text-white p-6 rounded-t-2xl flex items-center justify-between">
+              <h2 className="text-2xl font-bold mb-1">Order Details</h2>
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="p-2 hover:bg-white/10 rounded-xl transition-all duration-300"
+              >
+                <FiX className="text-2xl" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-8">
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-semibold text-warmgrey mb-2">OrderId</label>
+                <div className=' flex space-x-5'>
+                  <p className="text-lg font-medium text-CharcoalBlack">{orderDetail.id}</p>
+                  <button onClick={()=>{navigator.clipboard.writeText(orderDetail.id);toast.success('copied')}}><FiCopy/></button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-warmgrey mb-2">Status</label>
+                <div className="flex items-center gap-3">
+                  <div className={`p-3 rounded-xl ${getOrderStatusColor(orderDetail.status)} flex items-center justify-center`}>
+                    {getStatusIcon(orderDetail.status)}
+                  </div>
+                  <span className={`px-4 py-2 rounded-full text-sm font-medium ${getOrderStatusColor(orderDetail.status)}`}>
+                    {orderDetail.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* Customer */}
+              <div>
+                <label className="block text-sm font-semibold text-warmgrey mb-2">Customer</label>
+                <p className="text-lg font-medium text-CharcoalBlack">{orderDetail.customer}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-warmgrey mb-2">DeliveryBoy</label>
+                <p className="text-lg font-medium text-CharcoalBlack">{orderDetail?.deliveryboy ? orderDetail.deliveryboy : 'Not assign'}</p>
+              </div>
+              {/* Product */}
+              <div>
+                <label className="block text-sm font-semibold text-warmgrey mb-2">Order items</label>
+                {orderDetail && orderDetail.items && orderDetail.items.map((product)=>(
+                  <div className="flex items-center space-x-4 p-4 bg-offwhite rounded-lg">
+                    <img
+                      // src={product.image}
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-sans text-CharcoalBlack text-sm mb-1">
+                        {product.name}
+                      </h3>
+                      <span className="font-sans text-sm text-center" >{product.variantname}</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <h3 className=" text-warmgrey font-sans">Quantity:</h3>
+                          <span className="font-Manrope text-sm w-8 text-center">{product.quantity}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <h3 className=" text-warmgrey font-sans">Price:</h3>
+                          <span className="font-Manrope font-medium text-DeepNavy">
+                            ₹{(product.discount_price * product.quantity).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-warmgrey mb-2">Total Amount</label>
+                <p className="text-lg font-medium text-CharcoalBlack">{orderDetail.total_price}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-warmgrey mb-2">Payment Status</label>
+                <p className="text-lg font-medium text-CharcoalBlack">{orderDetail.payment_status}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-warmgrey mb-2">Shipping Address</label>
+                <p className="text-lg font-medium text-CharcoalBlack">{orderDetail.address}</p>
+              </div>
+
+              {/* Date */}
+              <div>
+                <label className="block text-sm font-semibold text-warmgrey mb-2">Order Date</label>
+                <p className="text-lg font-medium text-CharcoalBlack">{orderDetail?.date ? orderDetail.date.split('T')[0] : 'N/A'}</p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <button className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:opacity-90 transition-all duration-300">
+                  Track Order
+                </button>
+                <button className="flex-1 px-6 py-3 bg-white border border-gray-300 text-Charcoalblack rounded-xl font-semibold hover:bg-gray-300 transition-all duration-300">
+                  Print Invoice
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isAddProductOpen && <AddProduct onclose={closeAddProduct}/>}
     </>
   )
 }

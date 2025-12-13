@@ -50,6 +50,7 @@ const Login = () => {
         localStorage.setItem('username',user.username)
         localStorage.setItem('email',user.email)
         localStorage.setItem('role',user.role)
+        user.profileImg?.url ? localStorage.setItem('profilepic',JSON.stringify(user.profileImg)) : ''
         localStorage.setItem('expirytime',new Date().getDate() + 24 * 60 * 60 * 1000)
     }
 

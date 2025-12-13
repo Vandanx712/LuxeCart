@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link ,useNavigate} from 'react-router-dom';
-import { FiUser, FiPackage, FiBell, FiHeart, FiMapPin, FiLogOut, FiMenu, FiX, FiShoppingCart, FiArrowLeft } from 'react-icons/fi';
+import { FiUser, FiPackage, FiBell, FiHeart, FiMapPin, FiLogOut, FiMenu, FiX, FiShoppingCart, FiArrowLeft,   FiUpload, FiCamera } from 'react-icons/fi';
 import axios from 'axios';
 import { FaCoins } from 'react-icons/fa';
 import { toast,Toaster } from 'react-hot-toast';
@@ -26,6 +26,10 @@ const AccountPage = () => {
     const [isEditAddress,setIsEditAddress] = useState('')
     const navigate = useNavigate()
 
+    const [profileImg,setProfileImg] = useState(buyer.profileImg)
+    const [uploading, setUploading] = useState(false);
+    const fileinputRef = useRef(buyer.profileImg)
+
     const menuItems = [
         { name: 'My Account', icon: FiUser },
         { name: 'My Orders', icon: FiPackage },
@@ -43,6 +47,11 @@ const AccountPage = () => {
         loadAddress()
         loadOrder()
     }, [])
+
+    useEffect(() => {
+        loadBuyer()
+    }, [profileImg])
+    
     async function loadBuyer() {
         try {
             const id = localStorage.getItem('id')
@@ -155,8 +164,43 @@ const AccountPage = () => {
         } catch (error) {
             console.log(error)
         }
+    } 
+
+    const uploadpic = async(e)=>{   
+        try {
+            setUploading(true);    
+            const files = e.target.files
+            const formdata = new FormData()
+            for(let i=0;i<files.length;i++){
+                formdata.append('avatar',files[i])
+            }
+            const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/profilepic/set`,formdata,{headers:{'Content-Type':"multipart/form-data"},withCredentials:true})
+            setProfileImg(response.data.profileImg)
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setUploading(false);
+            e.target.value = null;
+        }
     }
-    
+     
+    const updatepic=async(e)=>{
+        try {
+            setUploading(true)
+            const file = e.target.files[0]
+            const formdata = new FormData()
+            formdata.append('oldkey',buyer.profileImg.key)
+            formdata.append('avatar',file)
+            const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/profilepic/update`,formdata,{withCredentials:true})
+            setProfileImg(response.data.profileImg)
+        } catch (error) {
+            console.error(error)
+        }finally{
+            setUploading(false)
+            e.target.value=null
+        }
+    }
+
     const clearAddState = ()=>{
         setOpenAddressForm(false)
         setStreet('')
@@ -183,17 +227,26 @@ const AccountPage = () => {
                         <div className="bg-warmgrey/15 rounded-lg p-6 mb-6">
                             <div className="flex items-center space-x-4 mb-6">
                                 {buyer.profileImg && (
-                                    <div className='w-17 h-17 rounded-full flex items-center border border-warmgrey/20'>
+                                    <div className='relative'>
                                         <img
+                                            className=' w-17 h-17 bg-royalpurple rounded-full object-cover border border-offwhite'
                                             src={buyer.profileImg.url}
                                         />
+                                        <div className='absolute right-0 bottom-13'>
+                                            <input type='file' ref={fileinputRef} onChange={updatepic} hidden accept='image/*'/>
+                                            <FiCamera onClick={()=>fileinputRef.current.click()} className='size-5 text-gray-600 cursor-pointer'/>
+                                        </div>
                                     </div>
                                 )}
-                                {!buyer.profileImg && (
-                                    <div className="w-17 h-17 bg-royalpurple rounded-full flex items-center justify-center">
-                                        <span className="text-offwhite font-Playfair font-medium text-xl">{buyer?.name?.length > 0 ? buyer.name[0] : ''}</span>
+
+                                <div className={` ${buyer.profileImg && 'hidden'} relative w-17 h-17 bg-royalpurple rounded-full flex items-center justify-center`}>
+                                    <span className="text-offwhite font-Playfair font-medium text-3xl">{buyer?.name?.length > 0 ? buyer.name[0] : ''}</span>
+                                    <div className='absolute right-0 bottom-13'>
+                                        <input type="file" ref={fileinputRef} onChange={uploadpic}  hidden accept='image/*' />
+                                        <FiUpload onClick={()=>fileinputRef.current.click()} className='size-5 text-deep-navy-dark cursor-pointer'/>
                                     </div>
-                                )}
+                                </div>
+
                                 <div>
                                     <h3 className="text-xl font-Playfair font-medium text-CharcoalBlack">{buyer.username}</h3>
                                     <p className="text-gray-500 font-Manrope">{buyer.email}</p>
@@ -495,17 +548,14 @@ const AccountPage = () => {
                         {/* Profile section */}
                         <div className="flex items-center space-x-3 mb-6 pb-4 border-b border-warmgrey/20">
                             {buyer.profileImg && (
-                                <div className='w-17 h-17 rounded-full flex items-center border border-warmgrey/20'>
-                                    <img
-                                        src={buyer.profileImg.url}
-                                    />
-                                </div>
+                                <img
+                                    className='w-17 h-17 rounded-full border border-warmgrey/20 object-cover'
+                                    src={buyer.profileImg.url}
+                                />
                             )}
-                            {!buyer.profileImg && (
-                                <div className="w-17 h-17 bg-royalpurple rounded-full flex items-center justify-center">
-                                    <span className="text-offwhite font-Playfair font-medium text-xl">{buyer?.name?.length > 0 ? buyer.name[0] : ''}</span>
-                                </div>
-                            )}
+                            <div className={` ${buyer.profileImg ? 'hidden':'block'} w-17 h-17 bg-royalpurple rounded-full flex items-center justify-center`}>
+                                <span className="text-offwhite font-Playfair font-medium text-3xl">{buyer?.name?.length > 0 ? buyer.name[0] : ''}</span>
+                            </div>
                             <div>
                                 <p className="font-Playfair font-medium text-CharcoalBlack">Hello, {buyer.name}</p>
                                 <p className="text-sm text-gray-500 font-Manrope">{buyer.email}</p>
@@ -563,6 +613,12 @@ const AccountPage = () => {
                 </div>
             </div>
             <Toaster position="top-center" reverseOrder={false} />
+            {uploading && (
+                <div className="flex fixed z-50 inset-0 flex-col justify-center items-center gap-2 mt-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
+                    <p className="text-sm text-gray-500">Uploading...</p>
+                </div>
+            )}
         </div>
     );
 };

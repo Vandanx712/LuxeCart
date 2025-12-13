@@ -25,13 +25,21 @@ body {
   margin: 0px;
 }
 
-.scrollbar-hide::-webkit-scrollbar {
+body::-webkit-scrollbar {
   display: none;
 }
 
-.scrollbar-hide {
+.body {
   -ms-overflow-style: none;
   /* IE and Edge */
   scrollbar-width: none;
   /* Firefox */
+}
+
+.scrollbar::-webkit-scrollbar{
+  display: none;
+}
+.scrollbar{
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

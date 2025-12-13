@@ -14,7 +14,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCategoryOpen,setCategoryOpen] = useState(false)
   const [cart, setCart] = useState(cartItems.length)
-  const [profilepic, setProfilepic] = useState('')
+  const [profilepic, setProfilepic] = useState(JSON.parse(localStorage.getItem("profilepic")))
   const navigate = useNavigate()
 
   const cartRef = useRef(null);
@@ -24,7 +24,6 @@ const Navbar = () => {
 
     const expirytime = localStorage.getItem('expirytime')
     if(new Date().getDate() > Number(expirytime)){
-      localStorage.clear()
       SetIsAccount(false)
       Logout()
     }else{
@@ -40,13 +39,14 @@ const Navbar = () => {
     };
   }, []);
 
-   const Logout = async()=>{
-          try {
-              await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/logout`,{},{withCredentials:true})
-          } catch (error) {
-              console.log(error)
-          }
-      }
+  const Logout = async () => {
+    try {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/logout`, {}, { withCredentials: true })
+      localStorage.clear()
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   async function loadCart() {
     try {
@@ -57,18 +57,8 @@ const Navbar = () => {
     }
   }
 
-  async function getpic() {
-    try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/profilepic/get`, { withCredentials: true })
-      setProfilepic(response.data.profilepic)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
   useEffect(() => {
     loadCart()
-    getpic()
   }, [cartItems.length])
 
   return (
@@ -131,8 +121,8 @@ const Navbar = () => {
               {isAccount ? (<div className="relative sm:block hidden" ref={accountRef}>
                 <button onClick={() => setIsAccountOpen(!isAccountOpen)} className="flex items-center text-[#1E3A5F] hover:text-[#D4AF37] transition-all duration-300 hover:scale-105 transform grou">
                   {profilepic && (<img
-                    src={profilepic}
-                    className="w-9 h-9 rounded-full"
+                    src={profilepic.url}
+                    className="w-9 h-9 rounded-full object-cover"
                   />)}
                   <FiUser size={25} className={profilepic ? 'hidden' : 'block'}/>
                 </button>
