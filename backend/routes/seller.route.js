@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { assignOrder, deleteAttribute, deleteVariant, deliveryboylist, filterAllList, getAllDeliveryBoy, getFreedeliveryBoy, getOndeliveryBoy, getOrderById, getOrderByStatus, getSellerById, ordergetbyid, orderlist, productDelete, productlist, productUpdate, sellerlogin, sellerRegister, updateAttribute, updateSeller, updateVariant, uploadProduct } from "../controllers/seller.controller.js";
+import { assignOrder, deleteAttribute, deleteVariant, deliveryboylist, filterAllList, getAllDeliveryBoy, getFreedeliveryBoy, getOndeliveryBoy, getOrderById, getOrderByStatus, getSellerById, ordergetbyid, orderlist, productDelete, productlist, productUpdate, sellerlogin, sellerRegister, updateAttribute, updateProductImg, updateSeller, updateVariant, uploadProduct } from "../controllers/seller.controller.js";
 import { verifyjwt } from "../middlewares/verifyjwt.js";
 import verifyRoles from '../middlewares/verifyrole.js'
 
@@ -20,6 +20,7 @@ sellerRouter.route('/getfreedeliveryboy').get(verifyjwt,verifyRoles(['seller']),
 
 //product part 
 sellerRouter.route('/uploadproduct').post(verifyjwt,verifyRoles(['seller']),uploadProduct)
+sellerRouter.route('/changeproduct').put(verifyjwt,verifyRoles(['seller']),updateProductImg)
 sellerRouter.route('/updateproduct').put(verifyjwt,verifyRoles(['seller']),productUpdate)
 sellerRouter.route('/deleteproduct/:productId').delete(verifyjwt,verifyRoles(['seller']),productDelete)
 

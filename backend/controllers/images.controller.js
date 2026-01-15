@@ -55,3 +55,20 @@ export const getProfilePic = asynchandller(async (req, res) => {
         profilepic
     })
 })
+
+// product images 
+
+export const uploadProductimg = asynchandller(async(req,res)=>{
+    const files = req.files 
+    const seller = req.user 
+
+    if(files.length==0) throw new ApiError(400,'Plz upload product image')
+
+    const key = StoragePath(seller.username,{includeSellerName:true,includeuserprofilepic:false,includeproductspic:true})
+    const productimages = await uploadPic(key,files)
+    
+    return res.status(200).json({
+        message:'Product images upload successfully',
+        productimages
+    })
+})

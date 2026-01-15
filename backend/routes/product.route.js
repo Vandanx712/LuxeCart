@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyjwt } from "../middlewares/verifyjwt.js";
-import {allBrands, allProducts, attributegetById, getallCategory, getCategoryAndSubcategory, getCategoryById, getProductByCategory, getSubcategoryByCategory, homepageProduct, productGetById, searchProduct, variantgetById } from "../controllers/product.controller.js";
+import {aiDescription, allBrands, allProducts, attributegetById, getallCategory, getCategoryAndSubcategory, getCategoryById, getProductByCategory, getSubcategoryByCategory, homepageProduct, productGetById, searchProduct, variantgetById } from "../controllers/product.controller.js";
 import verifyRoles from "../middlewares/verifyrole.js";
 
 
@@ -23,6 +23,6 @@ productRouter.route('/searchby/:categoryId').get(getProductByCategory)
 productRouter.route('/homepage').get(verifyjwt,homepageProduct)
 productRouter.route('/allproducts').get(allProducts)
 productRouter.route('/allbrand').get(allBrands)
-
+productRouter.route('/getaides').post(verifyjwt,verifyRoles(['seller']),aiDescription)
 
 export default productRouter

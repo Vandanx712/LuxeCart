@@ -7,6 +7,8 @@ import { Product } from "../models/product/product.model.js"
 import mongoose from "mongoose"
 import { Cart } from "../models/buyer/cart.model.js"
 import { Wishlist } from "../models/buyer/wishlist.model.js"
+import { getAiDescription } from "../services/aimodel.js"
+import { destroyoldPic } from "../services/cloudstorage.js"
 
 
 
@@ -370,5 +372,20 @@ export const allBrands = asynchandller(async(req,res)=>{
         page,
         brands,
         totalbrands:(allbrands.length-limit*page)
+    })
+})
+
+export const aiDescription = asynchandller(async(req,res)=>{
+    const {name,key,imgurl} = req.body
+    if([name,imgurl].some((field)=>field=='')) throw new ApiError(400,'Plz fill all field')
+
+    const aidescription = await getAiDescription(name,imgurl)
+
+    if(!aidescription) throw new ApiError(500,'Some mistake during generating or too many request')
+    await destroyoldPic(key)
+
+    return res.status(200).json({
+        message:'Description generate successfully',
+        description:aidescription
     })
 })

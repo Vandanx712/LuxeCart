@@ -123,7 +123,7 @@ export const getSellerById = asynchandller(async (req, res) => {
     return res.status(200).json({
         message: 'Fetch seller successfully',
         seller
-    })
+    })  
 })
 
 
@@ -228,14 +228,18 @@ export const uploadProduct = asynchandller(async (req, res) => {
 
     for(let variant of parsedVariants){
         let attributeIds = []
+        const allAttributes = []
         for (let attribute of variant.attributes) {
             if (!adminAttribute.value.includes(attribute.key.toLowerCase())) throw new ApiError(400, 'Plz enter valid key')
-            const attributeDoc = new ProductAttribute({
-                key:attribute.key,
-                value:attribute.value
-            })
-            await attributeDoc.save()
-            attributeIds.push(attributeDoc.id)
+            const exictattr = allAttributes.find((attr)=>attr.key===attribute.key && attr.value===attribute.value)
+            if(!exictattr){
+                const attributeDoc = await ProductAttribute.create({
+                  key: attribute.key,
+                  value: attribute.value,
+                });
+                attributeIds.push(attributeDoc.id)
+                allAttributes.push(attribute)
+            } 
         }
         const Variantprice = variant.price
         const discountprice = Variantprice - ((Variantprice * discount)/100)
@@ -271,6 +275,21 @@ export const uploadProduct = asynchandller(async (req, res) => {
     return res.status(200).json({
         message:'Product upload successfully',
         product
+    })
+})
+// this is use for update and upload product images
+export const updateProductImg = asynchandller(async(req,res)=>{
+    const {productId,productImg} = req.body
+    const sellerId = req.user.id
+
+    const product = await Product.findOne({id:productId,seller:sellerId})
+    if(!product) throw new ApiError(404,'Product not found')
+
+    product.images = productImg
+    await product.save()
+
+    return res.status(200).json({
+        message:'Product update successfully'
     })
 })
 

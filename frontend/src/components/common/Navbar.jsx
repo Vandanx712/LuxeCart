@@ -42,7 +42,7 @@ const Navbar = () => {
   const Logout = async () => {
     try {
       await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/logout`, {}, { withCredentials: true })
-      localStorage.clear()
+      await localStorage.clear()
     } catch (error) {
       console.log(error)
     }

@@ -101,8 +101,16 @@ export const updatePic = async(oldkey,key,file)=>{
             })
         }
         const updateimg = await update()
-        await cloudinary.uploader.destroy(oldkey)
+        await destroyoldPic(oldkey)
         return updateimg
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+export const destroyoldPic = async(oldkey)=>{
+    try {
+        await cloudinary.uploader.destroy(oldkey)
     } catch (error) {
         console.error(error)
     }

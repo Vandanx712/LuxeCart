@@ -45,7 +45,7 @@ export const registerBuyer = asynchandller(async (req, res) => {
         if (email === existbuyer.email) throw new ApiError(404, 'Email is already exist')
         if (phone === existbuyer.phone) throw new ApiError(404, 'Phone is already exist')
     }
-
+            
     if(user) throw new ApiError(429,'Email already exist')
 
     const newBuyer = await Buyer.create({

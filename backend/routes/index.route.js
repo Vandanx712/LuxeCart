@@ -4,10 +4,10 @@ import { getGoogleLoginCallback, getGoolgeLoginpage, getMe, login, logout } from
 import sellerRouter from "./seller.route.js";
 import deliveryBoyRouter from "./deliveryBoy.route.js";
 import { addAddress, deleteAddress, getAddressById, getUserAllAddress, sendotp, updateAddress, updatePassword, verifyotp } from "../controllers/common.controller.js";
-import profilepicRouter from "./profilepic.route.js";
 import adminRouter from "./admin.route.js";
 import { verifyjwt } from "../middlewares/verifyjwt.js";
 import productRouter from "./product.route.js";
+import imagesRouter from "./imges.route.js";
 
 
 const indexRoute = Router()
@@ -16,7 +16,7 @@ indexRoute.use('/buyer',buyerRoute)
 indexRoute.use('/admin',adminRouter)
 indexRoute.use('/deliveryboy',deliveryBoyRouter)
 indexRoute.use('/seller',sellerRouter)
-indexRoute.use('/profilepic',profilepicRouter)
+indexRoute.use('/profilepic',imagesRouter)
 indexRoute.use('/product',productRouter)
 indexRoute.post('/login',login)
 indexRoute.post('/logout',verifyjwt,logout)
