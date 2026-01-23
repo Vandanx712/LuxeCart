@@ -180,7 +180,7 @@ const CartModal = () => {
                                                 <div className="relative group">
                                                     <div className="h-24 w-24 sm:h-28 sm:w-28 flex-shrink-0 overflow-hidden rounded-xl border border-warmgrey/20 bg-offwhite shadow-sm">
                                                         <img
-                                                            src={item.img}
+                                                            src={item.img.url}
                                                             className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-200"
                                                         />
                                                     </div>

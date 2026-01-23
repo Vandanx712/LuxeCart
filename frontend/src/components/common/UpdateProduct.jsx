@@ -1,8 +1,8 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  FiArrowRight,
   FiCheck,
+  FiEdit,
   FiMinus,
   FiPlus,
   FiUpload,
@@ -10,7 +10,7 @@ import {
 } from "react-icons/fi";
 import { Toaster, toast } from "react-hot-toast";
 
-function AddProduct({ onclose }) {
+function UpdateProduct({ onclose, id }) {
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubCategories] = useState([]);
   const [isLoadsubcategory, setIsSubcategory] = useState("");
@@ -22,8 +22,8 @@ function AddProduct({ onclose }) {
   const [discount, setDiscount] = useState("");
   const [brand, setBrand] = useState("");
   const [images, setImges] = useState([]);
-  const [image, setImage] = useState([]);
-  const [imageUrl, setImageUrl] = useState([]);
+  const [isimage, setIsImage] = useState([]);
+  const [imageUrl, setImageUrl] = useState(false);
   const [productImage, setProductImage] = useState(null);
   const [variants, setVariant] = useState([
     {
@@ -34,28 +34,48 @@ function AddProduct({ onclose }) {
       attributes: [{ key: "", value: "" }],
     },
   ]);
-  const [uploading, setUploading] = useState("");
-  const [isAidesc, setIsAiDesc] = useState(false);
-  const [productId, setProductId] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [isUpload, setIsUpload] = useState(false);
 
   useEffect(() => {
-    if (image.length === 0) {
+    if (images.length === 0) {
       setImageUrl([]);
       return;
     }
-    const newimageUrl = image.map((image) => URL.createObjectURL(image));
-    setImageUrl(newimageUrl);
-  }, [image]);
+    if (!isimage) {
+      const newimageUrl = images.map((image) => URL.createObjectURL(image));
+      setImageUrl(newimageUrl);
+    }
+  }, [images]);
 
   useEffect(() => {
+    loadproduct();
     loadCategory();
   }, []);
 
+  const loadproduct = async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/product/getproductById/${id}`,
+      );
+      setName(response.data.product[0].name);
+      setDescription(response.data.product[0].description);
+      setCategory(response.data.product[0].category);
+      loadsubcategory(response.data.product[0].category)
+      setSubcategory(response.data.product[0].subcategory);
+      setBrand(response.data.product[0].brand);
+      setDiscount(response.data.product[0].discount);
+      setVariant(response.data.product[0].variants);
+      setImges(response.data.product[0].images);
+      setIsImage(response.data.product[0].images.length > 0 ? true : false);
+    } catch (error) {
+      console.error(error);
+    }
+  };
   const loadCategory = async () => {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/product/allcategory`
+        `${import.meta.env.VITE_BACKEND_URL}/api/product/allcategory`,
       );
       setCategories(response.data.categoies);
     } catch (error) {
@@ -69,7 +89,7 @@ function AddProduct({ onclose }) {
       const response = await axios.get(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/product/getsubcategory/${categoryId}`
+        }/api/product/getsubcategory/${categoryId}`,
       );
       setSubCategories(response.data.subcategory);
     } catch (error) {
@@ -96,9 +116,14 @@ function AddProduct({ onclose }) {
     setVariant(updated);
   };
 
-  const removeVariant = (variantIndex) => {
-    const removedvariant = variants[variantIndex];
-    setVariant(variants.filter((variant) => variant !== removedvariant));
+  const removeVariant = async(id,variantIndex) => {
+    try {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/seller/deletevariant/${id}`,{withCredentials:true})
+      const removedvariant = variants[variantIndex];
+      setVariant(variants.filter((variant) => variant !== removedvariant));
+    } catch (error) {
+      console.error(error)
+    }
   };
 
   const removeAttribute = (variantIndex) => {
@@ -108,7 +133,7 @@ function AddProduct({ onclose }) {
   };
 
   const removeimage = (index) => {
-    setImage((prev) => prev.filter((_, i) => i !== index));
+    setImges((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleVariantChange = (index, field, value) => {
@@ -124,13 +149,13 @@ function AddProduct({ onclose }) {
   };
 
   const uploadImge = async () => {
-    if (image.length == 0) toast.error("Plz choose image");
+    if (images.length == 0) toast.error("Plz choose image");
     else {
       try {
-        setUploading("uploading");
+        setUploading(true);
         const formdata = new FormData();
-        for (let i = 0; i < image.length; i++) {
-          formdata.append("avatar", image[i]);
+        for (let i = 0; i < images.length; i++) {
+          formdata.append("avatar", images[i]);
         }
         const response = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/profilepic/uploadimages`,
@@ -138,84 +163,127 @@ function AddProduct({ onclose }) {
           {
             headers: { "Content-Type": "multipart/form-data" },
             withCredentials: true,
-          }
+          },
         );
         setProductImage(response.data?.productimages);
         toast.success(response.data?.message);
       } catch (error) {
         console.error(error);
       } finally {
-        setUploading("");
+        setUploading(false);
       }
     }
   };
 
-  const createdescription = async () => {
+  const setproductpics = async () => {
     try {
-      setIsAiDesc(!isAidesc);
-      setUploading("generating");
-      if (name == "") {
-        toast.error("first write name and upload pic");
-        setIsAiDesc(false);
-        setUploading("");
-      } else if (productImage.length == 0) {
-        toast.error("Plz upload atleast one image");
-        setIsAiDesc(false);
-        setUploading("");
-      } else {
-        const response = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/api/product/getaides`,
-          {
-            name,
-            key: productImage[0].key,
-            imgurl: productImage[0].url,
-          },
-          { withCredentials: true }
-        );
-        setDescription(response?.data.description);
-      }
+      const response = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/seller/changeproduct`,
+        {
+          productId: id,
+          productImg: productImage,
+        },
+        { withCredentials: true },
+      );
+      toast.success(response.data.message);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const updateproduct = async () => {
+    try {
+      const response = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/seller/`,
+        {
+          productId: id,
+          name: name.trim(),
+          description: description.trim(),
+          brand: brand.trim(),
+          category,
+          subcategory,
+          discount,
+        },
+        { withCredentials: true },
+      );
+      toast.success(response.data.message);
+      onclose();
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message);
+    }
+  };
+
+  const removeImage = async (index) => {
+    try {
+      const image = images[index];
+      if (!image) return;
+
+      const response = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/profilepic/delete`,
+        {
+          oldkey: image.key,
+        },
+        { withCredentials: true },
+      );
+
+      images[index] = {
+        key: "",
+        url: "",
+      };
+      const res = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/seller/changeproduct`,
+        {
+          productId: id,
+          productImg: images,
+        },
+        { withCredentials: true },
+      );
+      setImges(res.data.images);
+      toast.success(response.data.message);
     } catch (error) {
       console.error(error);
     } finally {
-      setUploading("");
+      setUploading(false);
     }
   };
 
-  const addproduct = async () => {
+  const handleReplaceImage = async (e, index) => {
     try {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      setUploading(true);
+      const formdata = new FormData();
+      formdata.append("avatar", file);
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/seller/uploadproduct`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/profilepic/uploadimages`,
+        formdata,
         {
-          name,
-          description,
-          discount,
-          category,
-          subcategory,
-          brand,
-          variants,
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
         },
-        { withCredentials: true }
       );
-      setProductId(response.data.product.id);
-      toast.success(response.data?.message);
-      setIsUpload(true);
+      images[index] = {
+        key: response.data?.productimages[0].key,
+        url: response.data?.productimages[0].url,
+      };
+
+      const res = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/seller/changeproduct`,
+        {
+          productId: id,
+          productImg: images,
+        },
+        { withCredentials: true },
+      );
+      setImges(res.data.images);
     } catch (error) {
-      toast.error(error.response.data?.message);
+      console.error(error);
+    } finally {
+      setUploading(false);
     }
   };
-
-  const setproductpics = async()=>{
-    try {
-        const response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/seller/changeproduct`,{
-            productId,
-            productImg:productImage
-        })
-        toast.success(response.data.message)
-        onclose()
-    } catch (error) {
-        console.error(error)
-    }
-  }
 
   return (
     <>
@@ -277,6 +345,7 @@ function AddProduct({ onclose }) {
                     Category <span className="text-red-500">*</span>
                   </label>
                   <select
+                    value={category}
                     onChange={(e) => {
                       setCategory(e.target.value);
                       loadsubcategory(e.target.value);
@@ -305,6 +374,7 @@ function AddProduct({ onclose }) {
                     Sub Category <span className="text-red-500">*</span>
                   </label>
                   <select
+                    value={subcategory}
                     onChange={(e) => setSubcategory(e.target.value)}
                     style={{
                       backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
@@ -316,7 +386,7 @@ function AddProduct({ onclose }) {
                   >
                     {isLoadsubcategory ? (
                       <>
-                        <option value="">Select a subcategory </option>
+                        <option value="">Select a subcategory</option>
                         {subcategories.map((scategory) => (
                           <option key={scategory._id} value={scategory._id}>
                             {scategory.name}
@@ -339,14 +409,14 @@ function AddProduct({ onclose }) {
                 </label>
                 <div className="border border-gray-200 p-5 flex-col flex rounded-xl space-y-6 bg-offwhite">
                   {variants.map((variant, vIndex) => (
-                    <div key={vIndex} className="flex flex-col space-y-6">
+                    <div key={variant.id} className="flex flex-col space-y-6">
                       <div className=" flex items-center justify-between">
                         <span className="text-sm font-medium text-royalpurple">
                           Variant {vIndex + 1}
                         </span>
                         {variants.length > 1 && (
                           <button
-                            onClick={() => removeVariant(vIndex)}
+                            onClick={() => removeVariant(variant.id,vIndex)}
                             className=" text-xs text-red-400 hover:text-red-600 flex items-center transition-colors gap-1"
                           >
                             <FiMinus className="text-xl" />
@@ -362,12 +432,12 @@ function AddProduct({ onclose }) {
                           <input
                             type="text"
                             placeholder="Variant Name"
-                            value={variant.name}
+                            value={variant.variant_name}
                             onChange={(e) =>
                               handleVariantChange(
                                 vIndex,
                                 "name",
-                                e.target.value.trim()
+                                e.target.value.trim(),
                               )
                             }
                             className="w-full px-5 py-4 bg-offwhite/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-100 hover:border-gray-200 transition-all duration-300 text-CharcoalBlack font-medium placeholder:text-warmgrey/60 shadow-sm focus:shadow-lg"
@@ -385,7 +455,7 @@ function AddProduct({ onclose }) {
                               handleVariantChange(
                                 vIndex,
                                 "price",
-                                e.target.value.trim()
+                                e.target.value.trim(),
                               )
                             }
                             className="w-full px-5 py-4 bg-offwhite/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-100 hover:border-gray-200 transition-all duration-300 text-CharcoalBlack font-medium placeholder:text-warmgrey/60 shadow-sm focus:shadow-lg"
@@ -400,12 +470,12 @@ function AddProduct({ onclose }) {
                           <input
                             type="number"
                             placeholder="Stock"
-                            value={variant.stock}
+                            value={variant.stock_count}
                             onChange={(e) =>
                               handleVariantChange(
                                 vIndex,
                                 "stock",
-                                e.target.value.trim()
+                                e.target.value.trim(),
                               )
                             }
                             className="w-full px-5 py-4 bg-offwhite/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-100 hover:border-gray-200 transition-all duration-300 text-CharcoalBlack font-medium placeholder:text-warmgrey/60 shadow-sm focus:shadow-lg"
@@ -417,12 +487,12 @@ function AddProduct({ onclose }) {
                         <div className=" p-3 relative">
                           <input
                             type="checkbox"
-                            checked={variant.defaultVariant}
+                            checked={variant.is_default_Variant}
                             onChange={() =>
                               handleVariantChange(
                                 vIndex,
                                 "defaultVariant",
-                                !variant.defaultVariant
+                                !variant.is_default_Variant,
                               )
                             }
                             className=" peer w-5 h-5 rounded border-2 border-gray-300 appearance-none checked:bg-royalpurple checked:border-royalpurple cursor-pointer transition-all"
@@ -461,7 +531,7 @@ function AddProduct({ onclose }) {
                                       vIndex,
                                       aIndex,
                                       "key",
-                                      e.target.value.trim()
+                                      e.target.value.trim(),
                                     )
                                   }
                                   className="w-full px-5 py-4 bg-offwhite/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-100 hover:border-gray-200 transition-all duration-300 text-CharcoalBlack font-medium placeholder:text-warmgrey/60 shadow-sm focus:shadow-lg"
@@ -481,7 +551,7 @@ function AddProduct({ onclose }) {
                                       vIndex,
                                       aIndex,
                                       "value",
-                                      e.target.value.trim()
+                                      e.target.value.trim(),
                                     )
                                   }
                                   className="w-full px-5 py-4 bg-offwhite/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-100 hover:border-gray-200 transition-all duration-300 text-CharcoalBlack font-medium placeholder:text-warmgrey/60 shadow-sm focus:shadow-lg"
@@ -562,24 +632,28 @@ function AddProduct({ onclose }) {
               </div>
 
               {/* upload file */}
-              <div className=" group">
-                <label className=" text-sm font-medium text-CharcoalBlack mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-royalpurple rounded-full"></span>
-                  Product Image (upload image for product description){" "}
-                  <span className="text-red-500">*</span>
-                </label>
-                <div className="border border-gray-200 p-5 flex-col flex rounded-xl space-y-6 bg-offwhite">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setImage([...e.target.files])}
-                    className="w-full px-5 py-4 bg-offwhite/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-100 hover:border-gray-200 transition-all duration-300 text-CharcoalBlack font-medium placeholder:text-warmgrey/60 shadow-sm focus:shadow-lg"
-                  />
-                  {imageUrl.length > 0 && (
+
+              {!isimage && (
+                <div className=" group">
+                  <label className=" text-sm font-medium text-CharcoalBlack mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-royalpurple rounded-full"></span>
+                    Product Images (select multiple pics in once)
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <div className="border border-gray-200 p-5 flex-col flex rounded-xl space-y-6 bg-offwhite">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={(e) => setImges([...e.target.files])}
+                      className="w-full px-5 py-4 bg-offwhite/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-100 hover:border-gray-200 transition-all duration-300 text-CharcoalBlack font-medium placeholder:text-warmgrey/60 shadow-sm focus:shadow-lg"
+                    />
+
                     <div className="flex flex-row flex-wrap gap-3 pt-2">
                       {imageUrl.map((image, index) => (
-                        <div key={index} className=" relative">
+                        <div key={index} className="relative">
                           <img
+                            key={index}
                             className="w-20 h-20 object-cover rounded-lg"
                             src={image}
                           />
@@ -592,37 +666,73 @@ function AddProduct({ onclose }) {
                         </div>
                       ))}
                     </div>
-                  )}
-                  <button
-                    onClick={() => uploadImge()}
-                    className="flex-1 p-3 bg-blue-100 hover:bg-blue-200 text-blue-500 rounded-xl font-semibold hover:shadow-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
-                  >
-                    <FiUpload className="text-xl" />
-                    Upload Photos
-                  </button>
-                </div>
-              </div>
 
-              {/* Description */}
-              <label className="flex items-center gap-3 cursor-pointer p-3 bg-royalpurple/5 rounded-xl border border-royalpurple/10 hover:border-royalpurple/20 transition-all">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={isAidesc}
-                    onChange={() => createdescription()}
-                    className="peer w-5 h-5 rounded border-2 border-gray-300 appearance-none checked:bg-royalpurple checked:border-royalpurple cursor-pointer transition-all"
-                  />
-                  <FiCheck className="absolute left-4 top-[17px] w-3 h-3 text-white opacity-0 pointer-events-none peer-checked:opacity-100 transition-opacity" />
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => uploadImge()}
+                        className="flex-1 p-3 bg-blue-100 hover:bg-blue-200 text-blue-500 rounded-xl font-semibold hover:shadow-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+                      >
+                        <FiUpload className="text-xl" />
+                        Upload Photos
+                      </button>
+                      <button
+                        onClick={() => setproductpics()}
+                        className="flex-1 p-3 bg-deep-navy-dark/30 hover:bg-deep-navy-dark/60 hover:text-DeepNavy text-DeepNavy/60 rounded-xl font-semibold hover:shadow-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+                      >
+                        <FiUpload className="text-xl" />
+                        Update Photos
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-sm font-medium text-CharcoalBlack">
-                    Generate AI Description
-                  </span>
-                  <p className=" text-xs text-warmgrey">
-                    Let AI write your product description automatically
-                  </p>
+              )}
+
+              {isimage && (
+                <div className=" group">
+                  <label className=" text-sm font-medium text-CharcoalBlack mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-royalpurple rounded-full"></span>
+                    Product Images ( manage product images )
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <div className="border border-gray-200 p-5 flex-col flex rounded-xl space-y-6 bg-offwhite">
+                    <div className="flex flex-row flex-wrap gap-3 pt-2">
+                      {images.map((image, index) => (
+                        <div
+                          key={index}
+                          className="relative w-20 h-20 border rounded-lg flex items-center justify-center bg-gray-100 cursor-pointer group"
+                        >
+                          {image.url !== "" ? (
+                            <>
+                              <img
+                                src={image.url}
+                                className="w-full h-full object-cover rounded-lg"
+                              />
+
+                              <button
+                                onClick={() => removeImage(index)}
+                                className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 text-white rounded-full flex items-center justify-center cursor-pointer"
+                              >
+                                <FiX className="text-xs" />
+                              </button>
+                            </>
+                          ) : (
+                            <label className="flex flex-col items-center justify-center text-xs text-gray-500 cursor-pointer">
+                              <FiUpload className="text-lg" />
+                              Add Image
+                              <input
+                                type="file"
+                                accept="image/*"
+                                hidden
+                                onChange={(e) => handleReplaceImage(e, index)}
+                              />
+                            </label>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </label>
+              )}
 
               <div className="group">
                 <label className="text-sm font-medium text-CharcoalBlack mb-3 flex items-center gap-2">
@@ -647,65 +757,11 @@ function AddProduct({ onclose }) {
                   Cancel
                 </button>
                 <button
-                  onClick={() => addproduct()}
+                  onClick={() => updateproduct()}
                   className="flex-1 px-4 py-3 bg-blue-300 text-blue-500 rounded-2xl font-bold hover:shadow-xl hover:opacity-80  hover:scale-105 transition-all duration-200 shadow-lg flex items-center justify-center gap-2"
                 >
-                  <FiArrowRight className="text-xl" />
-                  Add Product
-                </button>
-              </div>
-            </div>
-          )}
-          {isUpload && (
-            <div className="p-8 space-y-6">
-              <div className=" group">
-                <label className=" text-sm font-medium text-CharcoalBlack mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-royalpurple rounded-full"></span>
-                  Product Image
-                  <span className="text-red-500">*</span>
-                </label>
-                <div className="border border-gray-200 p-5 flex-col flex rounded-xl space-y-6 bg-offwhite">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple='true'
-                    onChange={(e) => setImges([...e.target.files])}
-                    className="w-full px-5 py-4 bg-offwhite/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-100 hover:border-gray-200 transition-all duration-300 text-CharcoalBlack font-medium placeholder:text-warmgrey/60 shadow-sm focus:shadow-lg"
-                  />
-                  {imageUrl.length > 0 && (
-                    <div className="flex flex-row flex-wrap gap-3 pt-2">
-                      {imageUrl.map((image, index) => (
-                        <div key={index} className=" relative">
-                          <img
-                            className="w-20 h-20 object-cover rounded-lg"
-                            src={image}
-                          />
-                          <button
-                            onClick={() => removeimage(index)}
-                            className=" absolute -top-2 -right-2 cursor-pointer outline-none flex justify-center w-5 h-5 items-center bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 "
-                          >
-                            <FiX className="text-xs" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <button
-                    onClick={() => uploadImge()}
-                    className="flex-1 p-3 bg-blue-100 hover:bg-blue-200 text-blue-500 rounded-xl font-semibold hover:shadow-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
-                  >
-                    <FiUpload className="text-xl" />
-                    Upload Photos
-                  </button>
-                </div>
-              </div>
-              <div className="flex sm:flex-row gap-3 pt-4 border-t border-gray-300">
-                <button
-                  onClick={() => setproductpics()}
-                  className="flex-1 px-4 py-3 bg-blue-300 text-blue-500 rounded-2xl font-bold hover:shadow-xl hover:opacity-80  hover:scale-105 transition-all duration-200 shadow-lg flex items-center justify-center gap-2"
-                >
-                  <FiArrowRight className="text-xl" />
-                  Add Product
+                  <FiEdit className="text-xl" />
+                  Update Product
                 </button>
               </div>
             </div>
@@ -716,11 +772,11 @@ function AddProduct({ onclose }) {
       {uploading && (
         <div className="flex fixed bg-black/10 z-50 inset-0 flex-col justify-center items-center gap-2 mt-2">
           <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
-          <p className="text-sm text-gray-500">{uploading}...</p>
+          <p className="text-sm text-gray-500">uploading...</p>
         </div>
       )}
     </>
   );
 }
 
-export default AddProduct;
+export default UpdateProduct;

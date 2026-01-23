@@ -7,6 +7,7 @@ import axios from "axios";
 
 const Home = () => {
   const [products,setProducts] = useState([])    
+  const [page,setPage] = useState(0)
 
   useEffect(()=>{
     window.scrollTo(0,0)
@@ -17,8 +18,19 @@ const Home = () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/product/homepage`,{withCredentials:true})
       setProducts(response.data.products)
+      setPage(1)
     } catch (error) {
       console.log(error)
+    }
+  }
+
+  const loadmoreproduct = async()=>{
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/product/homepage?page=${page+1}`,{withCredentials:true})
+      setPage(response.data.page)
+      response.data.products.map((p)=>products.push(p))
+    } catch (error) {
+      console.error(error)
     }
   }
   return (
@@ -39,7 +51,7 @@ const Home = () => {
 
           {/* Load More Button */}
           <div className="text-center mt-16">
-            <button className="bg-DeepNavy text-offwhite px-12 py-4 rounded-full font-Manrope hover:bg-gold hover:text-CharcoalBlack transition-all duration-300 transform hover:scale-105">
+            <button onClick={()=>loadmoreproduct()} className="bg-DeepNavy text-offwhite px-12 py-4 rounded-full font-Manrope hover:bg-gold hover:text-CharcoalBlack transition-all duration-300 transform hover:scale-105">
               Load More Products
             </button>
           </div>

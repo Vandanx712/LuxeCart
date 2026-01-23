@@ -282,19 +282,17 @@ export const updateProductImg = asynchandller(async(req,res)=>{
     const {productId,productImg} = req.body
     const sellerId = req.user.id
 
-    const product = await Product.findOne({id:productId,seller:sellerId})
+    const product = await Product.findOneAndUpdate({_id:productId,seller:sellerId},{$set:{images:productImg}},{new:true})
     if(!product) throw new ApiError(404,'Product not found')
 
-    product.images = productImg
-    await product.save()
-
     return res.status(200).json({
-        message:'Product update successfully'
+        message:'Product update successfully',  
+        images:product.images
     })
 })
 
 export const productUpdate = asynchandller(async(req,res)=>{
-    const {productId,name,description,brand,category,subcategory,discount,} = req.body
+    const {productId,name,description,brand,category,subcategory,discount} = req.body
     const product = await Product.findByIdAndUpdate(productId,{$set:{name,description,brand,category,subcategory,discount}},{new:true})
     if(!product) throw new ApiError(404,"Product not found")
 
@@ -416,7 +414,6 @@ export const deleteVariant = asynchandller(async (req, res) => {
     });
     const variant = await ProductVariant.findById(variantId)
     if(!variant) throw new ApiError(404,'Variant not found')
-    if (!product) return res.status(403).json({ message: "Unauthorized" });
 
     product.variants.pull(variantId);
     await product.save();

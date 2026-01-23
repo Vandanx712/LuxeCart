@@ -121,12 +121,12 @@ const CompanyLogoSlider = () => {
 
   const logos = [
     companyLogo.appleLogo,
-    companyLogo.googleLogo,
     companyLogo.hpLogo,
-    companyLogo.metaLogo,
-    companyLogo.microsoftLogo,
     companyLogo.samsungLogo,
-    companyLogo.teslaLogo,
+    companyLogo.uspologo,
+    companyLogo.levilogo,
+    companyLogo.vanheusen,
+    companyLogo.whirlpool
   ];
 
   const [imgIndex, setImgIndex] = useState(0);

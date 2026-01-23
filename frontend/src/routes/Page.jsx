@@ -14,6 +14,7 @@ import LoginSuccess from "../components/common/LoginSuccess";
 import SellerSignup from "../pages/SellerSignup";
 import Order from "../components/buyer/Order";
 import SellerDashboard from "../pages/SellerDashboard";
+import DboyDashboard from "../pages/DboyDashboard";
 
 const Page = () => {
   const PrivateRoute = ({ children }) => {
@@ -41,6 +42,7 @@ const Page = () => {
           <Route path="category/:pcid/:scid" element={<CategoryProducts/>}/>
         </Route>
         <Route path="/sdashboard" element={<PrivateRoute><SellerDashboard/></PrivateRoute>}/>
+        <Route path="/dbdeshboard" element={<PrivateRoute><DboyDashboard/></PrivateRoute>}/>
       </Routes>
     </BrowserRouter>
   );

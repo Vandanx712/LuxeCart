@@ -24,7 +24,7 @@ function Wishlist() {
                 const name = item.name
                 const price = item.price
                 const discount_price = item.discount_price
-                const img = item.images[0]
+                const img = item.images?.[0]?.url
 
                 return {
                     pid,

@@ -45,7 +45,7 @@ const ProductCard = ({
             price,
             discount_price,
             qty:1,
-            img:images[0]
+            img:images?.[0]
         }
         try {
             await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/buyer/addoncart`,{
@@ -63,7 +63,7 @@ const ProductCard = ({
         <div key={_id} className="group hover:shadow-2xl transition-all duration-500 border-0 bg-white overflow-hidden animate-scale-in rounded-lg cursor-pointer" >
             <div className="relative overflow-hidden">
                 <img
-                    src={images[0]}
+                    src={images?.[0]?.url}
                     className="w-full h-64 sm:h-72 object-cover group-hover:scale-110 transition-transform duration-700"
                 />
 

@@ -338,7 +338,7 @@ const AccountPage = () => {
                                     </div>
                                     {order.items.map((item) => (
                                         <div className="flex items-center space-x-5 space-y-5">
-                                            <div className="w-20 h-20 bg-warmgrey/20 rounded-lg"></div>
+                                            <img src={item?.image[0]?.url} className="w-20 h-20 bg-warmgrey/20 rounded-lg"/>
                                             <div className="flex-1">
                                                 <p className="font-sans text-deep-navy-dark">{item.name}</p>
                                                 <span className='text-sm text-warmgrey font-sans'>{item.variantname}</span>

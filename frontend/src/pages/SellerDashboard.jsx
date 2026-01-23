@@ -30,6 +30,7 @@ import axios from 'axios'
 import { toast,Toaster } from 'react-hot-toast';
 import '../index.css'
 import AddProduct from '../components/common/AddProduct';
+import UpdateProduct from '../components/common/UpdateProduct';
 
 
 
@@ -719,7 +720,7 @@ function SellerDashboard() {
                   </div>
 
                   <div className="flex gap-3">
-                    <button className="flex-1 px-4 py-2 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:scale-105 bg-offwhite/70 backdrop-blur-sm border border-gray-200 text-CharcoalBlack hover:bg-offwhite hover:border-gold/50 flex items-center justify-center gap-2">
+                    <button onClick={()=>setSelectedProduct(product.productId)} className="flex-1 px-4 py-2 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:scale-105 bg-offwhite/70 backdrop-blur-sm border border-gray-200 text-CharcoalBlack hover:bg-offwhite hover:border-gold/50 flex items-center justify-center gap-2">
                       <FiEdit />
                       Edit
                     </button>
@@ -1462,7 +1463,7 @@ function SellerDashboard() {
                 {orderDetail && orderDetail.items && orderDetail.items.map((product)=>(
                   <div className="flex items-center space-x-4 p-4 bg-offwhite rounded-lg">
                     <img
-                      // src={product.image}
+                      src={product?.image?.url}
                       className="w-16 h-16 object-cover rounded-lg"
                     />
                     <div className="flex-1">
@@ -1523,6 +1524,7 @@ function SellerDashboard() {
       )}
 
       {isAddProductOpen && <AddProduct onclose={closeAddProduct}/>}
+      {selectedProduct!=='' && <UpdateProduct onclose={()=>setSelectedProduct('')} id={selectedProduct}/>}
     </>
   )
 }
