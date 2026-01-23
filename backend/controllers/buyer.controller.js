@@ -649,7 +649,7 @@ export const getallOrder = asynchandller(async(req,res)=>{
                         quantity: "$items.quantity",
                         price:'$variant.price',
                         discount_price:'$variant.discount_price',
-                        image:'$product.imges[0]'
+                        image:'$product.images'
                     }
                 }
             }

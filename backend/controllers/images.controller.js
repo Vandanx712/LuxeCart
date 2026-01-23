@@ -1,7 +1,7 @@
 import { ApiError } from "../utill/apierror.js"
 import { asynchandller } from "../utill/asynchandller.js"
 import { StoragePath } from "../utill/filesPath.js"
-import { updatePic, uploadPic } from "../services/cloudstorage.js"
+import { destroyoldPic, updatePic, uploadPic } from "../services/cloudstorage.js"
 import { findUserByEmail } from "./common.controller.js"
 
 
@@ -70,5 +70,13 @@ export const uploadProductimg = asynchandller(async(req,res)=>{
     return res.status(200).json({
         message:'Product images upload successfully',
         productimages
+    })
+})
+
+export const deleteSingleimg = asynchandller(async(req,res)=>{
+    const { oldkey } = req.body
+    await destroyoldPic(oldkey)
+    return res.status(200).json({
+        message:'Delete Image successfully'
     })
 })

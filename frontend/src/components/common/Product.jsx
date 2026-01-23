@@ -65,7 +65,7 @@ function Product() {
   const loadRelatedProduct = async (subcat) => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/product/searchby/${subcat}`)
-      setRelatedProducts(response.data.products)
+      setRelatedProducts(response.data.products.filter((product)=>product._id!==id))
     } catch (error) {
       console.log(error)
     }
@@ -120,13 +120,13 @@ function Product() {
               {/* Main Image */}
               <div className="aspect-square bg-offwhite rounded-2xl overflow-hidden border">
                 <img
-                  src={productImages[selectedImage]}
+                  src={productImages[selectedImage]?.url}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                 />
               </div>
 
               {/* Thumbnail Images */}
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-6 gap-3">
                 {productImages.map((image, index) => (
                   <button
                     key={index}
@@ -137,7 +137,7 @@ function Product() {
                       }`}
                   >
                     <img
-                      src={image}
+                      src={image.url}
                       alt={`Product view ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
